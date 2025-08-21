@@ -13,6 +13,7 @@ idna==3.10
 inflection==0.5.1
 jsonschema==4.25.0
 jsonschema-specifications==2025.4.1
+mysqlclient==2.2.7
 pillow==11.3.0
 pycparser==2.22
 PyJWT==2.10.1
