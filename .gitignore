@@ -27,6 +27,8 @@ share/python-wheels/
 MANIFEST
 **/databases/**
 
+staticfiles/
+
 **/migrations/**
 !**/__init__.py
 
