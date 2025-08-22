@@ -16,8 +16,10 @@ from .serializers import UserSerializer
 from .local_settings import *
 from pathlib import Path
 
+from django.conf import settings
+
 # Load PRIVATE_KEY buat sign internal token
-PRIVATE_KEY = Path(BASE_DIR, "keys/private.pem").read_text()
+PRIVATE_KEY = Path(settings.BASE_DIR, "keys/private.pem").read_text()
 
 User = get_user_model()
 
