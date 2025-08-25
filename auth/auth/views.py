@@ -68,7 +68,7 @@ class AuthViewSet(viewsets.ViewSet):
                 resp = requests.get(
                     f"{HR_SERVICE}/api/hr/master/employee/?user_id={user.pk}&exclude=parent,children",
                     headers={"Authorization": f"Bearer {internal_token}"},
-                    timeout=5
+                    timeout=10
                 )
 
                 if resp.status_code == 200:
