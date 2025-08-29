@@ -36,7 +36,7 @@ class DynamicModelSerializer(serializers.ModelSerializer):
             for field_name in exclude:
                 self.fields.pop(field_name, None)
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(DynamicModelSerializer):
     raw_password = serializers.CharField(write_only=True)
     class Meta:
         model = User

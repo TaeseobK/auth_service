@@ -6,11 +6,14 @@ from django.contrib.auth import get_user_model
 from django.contrib.sessions.models import Session
 
 from .local_settings import *
+from .filters import *
 
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets, status
+
+from drf_spectacular.types import OpenApiTypes
 
 from .serializers import UserSerializer
 from .local_settings import *
@@ -25,6 +28,7 @@ User = get_user_model()
 
 @extend_schema(tags=['Auth'])
 class AuthViewSet(viewsets.ViewSet):
+    serializer_class = UserSerializer
 
     # ================= LOGIN =================
     @method_decorator(csrf_exempt)
@@ -148,3 +152,30 @@ class AuthViewSet(viewsets.ViewSet):
         user.save()
 
         return Response({'detail': 'Password updated successfully.'}, status=status.HTTP_200_OK)
+    
+@extend_schema(tags=["User"])
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all().order_by('-date_joined')
+    serializer_class = UserSerializer
+    filterset_class = UserFilter
+
+    @extend_schema(
+        description="Ambil daftar user dengan pagination & filter.",
+        parameters=[
+            OpenApiParameter("page", OpenApiTypes.INT, OpenApiParameter.QUERY,
+                             description="Return which page you want to return."),
+            OpenApiParameter("page_size", OpenApiTypes.INT, OpenApiParameter.QUERY,
+                             description="Return the count of data each page."),
+            OpenApiParameter("page_size", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                             description="Return the count of data each page."),
+            OpenApiParameter("search", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                             description="Search based on username (WHERE LIKE %<value>%) and email (WHERE LIKE %<value>%)"),
+            OpenApiParameter("fields", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                             description="Only get the fields you want\n\nexample:\n\n?fields=username,email,is_active"),
+            OpenApiParameter("exclude", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                             description="Remove the fields you want\n\nexample:\n\n?exclude=first_name,last_name,date_joined,last_login")
+        ],
+        responses={200: UserSerializer}
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
