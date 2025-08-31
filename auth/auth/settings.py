@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework.authtoken',
-    'drf_spectacular_sidecar',
+    'drf_spectacular_extras',
     'drf_spectacular',
     'rest_framework',
     'django_filters',
@@ -59,7 +59,28 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'AUTH_SERVICE',
     'DESCRIPTION': f"Documentation for Login, Logout, and Change_Password\n\nWARNING NOTES:\n\n{Path(BASE_DIR, 'keys/warning.md').read_text(encoding='utf-8')}",
     'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': True
+    'SERVE_INCLUDE_SCHEMA': True,
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True,
+        'theme': 'green',
+        'docExpansion': 'none',
+        'showExtensions': True,
+        'displayRequestDuration': True,
+    }
+}
+
+SPECTACULAR_EXTRAS_SETTINGS = {
+    'SCALAR_UI_SETTINGS': {
+        'theme': 'deepSpace',
+        'layout': 'modern',
+        'showSidebar': True,
+        'hideDownloadButton': False,
+        'searchHotKey': 'k',
+    },
 }
 
 MIDDLEWARE = [
@@ -70,6 +91,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'auth.middleware.PrometheusMiddleware',
 ]
 
 ROOT_URLCONF = 'auth.urls'
@@ -142,3 +164,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CSRF_TRUSTED_ORIGINS = CSRF_SERVICE
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SERIALIZER": "django_redis.serializers.json.JSONSerializer",
+        }
+    }
+}

@@ -4,9 +4,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.models import Session
+from django.http import HttpResponse
 
 from .local_settings import *
 from .filters import *
+from .serializers import UserSerializer
+from .local_settings import *
+from .config import fetch_external_data
 
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.decorators import action
@@ -15,11 +19,11 @@ from rest_framework import viewsets, status
 
 from drf_spectacular.types import OpenApiTypes
 
-from .serializers import UserSerializer
-from .local_settings import *
 from pathlib import Path
 
 from django.conf import settings
+    
+from prometheus_client import generate_latest, REGISTRY
 
 # Load PRIVATE_KEY buat sign internal token
 PRIVATE_KEY = Path(settings.BASE_DIR, "keys/private.pem").read_text()
@@ -68,22 +72,21 @@ class AuthViewSet(viewsets.ViewSet):
 
         employee_data = None
         if not user.is_superuser:
-            try:
-                resp = requests.get(
-                    f"{HR_SERVICE}/api/hr/master/employee/?user_id={user.pk}&exclude=parent,children",
-                    headers={"Authorization": f"Bearer {internal_token}"},
-                    timeout=10
-                )
-
-                if resp.status_code == 200:
-                    results = resp.json().get('results', [])
-                    employee_data = results[0] if results else None
-                
-                else:
-                    employee_data = {"detail": f"HR service error {resp.status_code}"}
-            
-            except requests.RequestException as e:
-                employee_data = {"detail": f"HR service unreachable: {str(e)}"}
+            employee_data = fetch_external_data(
+                service_name="HR",
+                endpoint=f"{HR_SERVICE}/api/hr/master/employee/?user_id={user.pk}&exclude=parent,children,created_at,updated_at,created_by,updated_by,deleted_at,deleted_by",
+                key_suffix=f"employee:{user.pk}",
+                timeout=600,
+                retries=2,
+                fallback=True
+            )
+            if employee_data and "results" in employee_data:
+                results = employee_data.get("results", [])
+                employee_data = results[0] if results else None
+            elif employee_data is None:
+                employee_data = {"detail": "HR service unreachable or failed after retries"}
+            else:
+                employee_data = {"detail": "HR service returned unexpected data"}
 
         resp =  Response({
             'sessionid': session_id,
@@ -179,3 +182,7 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
+# Endpoint untuk expose metrics ke Prometheus
+def metrics_view(request):
+    return HttpResponse(generate_latest(REGISTRY), content_type="text/plain; charset=utf-8")

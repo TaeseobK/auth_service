@@ -120,6 +120,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 from django.db import models, transaction
 from django.db.models import Q
+from django.core.cache import cache
 
 from django_filters.rest_framework import FilterSet, DjangoFilterBackend
 
@@ -133,10 +134,12 @@ from drf_spectacular.utils import (
 )
 from drf_spectacular.types import OpenApiTypes
 
+
 from .local_settings import *
 
 import django_filters
 import pandas as pd
+import requests
 import math
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -330,3 +333,29 @@ def custom_exception_handler(exc, context):
             response.data = {"detail": data.get("detail", data)}
 
     return response
+
+def fetch_external_data(service_name, endpoint, key_suffix, timeout=3600, retries=2, fallback=True):
+    cache_key = f"{service_name}:{key_suffix}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    last_exception = None
+    for attempt in range(retries):
+        try:
+            response = requests.get(endpoint, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                cache.set(cache_key, data, timeout=timeout)
+                return data
+        except Exception as e:
+            last_exception = e
+
+    if fallback:
+        stale = cache.get(cache_key)
+        if stale:
+            print(f"[WARN] Service {service_name} down, using stale cache")
+            return stale
+
+    print(f"[ERROR] fetch_external_data({service_name}) failed: {last_exception}")
+    return None

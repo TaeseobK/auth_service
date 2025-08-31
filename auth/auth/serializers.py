@@ -1,5 +1,8 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from .config import fetch_external_data
+
+from .local_settings import *
 
 class DynamicModelSerializer(serializers.ModelSerializer):
     """

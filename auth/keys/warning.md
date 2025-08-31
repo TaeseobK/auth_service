@@ -1,6 +1,6 @@
 📘 API Endpoint Documentation (RESTful)
 
-1. GET (Retrieve Data)
+- GET (Retrieve Data)
    - Purpose: Fetch data from the server (does not modify state).
    - Idempotent: Yes (repeated calls return the same result).
    - Common cases:
@@ -9,7 +9,8 @@
    - Response: typically 200 OK + JSON payload.
    - Common errors: 404 (resource not found).
 
-2. POST (Create Data)
+
+- POST (Create Data)
    - Purpose: Create a new resource.
    - Idempotent: No (calling twice may create duplicates).
    - Common cases:
@@ -21,7 +22,7 @@
    - Response: usually 201 Created + created object.
    - Common errors: 400 (validation failed, missing required fields).
 
-3. PUT (Full Update)
+- PUT (Full Update)
    - Purpose: Replace an existing resource entirely.
    - All fields must be provided; missing fields may be set to NULL/empty.
    - Idempotent: Yes (sending the same payload repeatedly gives same result).
@@ -34,7 +35,7 @@
    - Best for full updates (e.g. complete profile form).
    - Warning: partial payloads can unintentionally overwrite data.
 
-4. PATCH (Partial Update)
+- PATCH (Partial Update)
    - Purpose: Update selected fields only (partial modification).
    - Idempotent: Not always (depends on implementation).
    - Example:
@@ -46,7 +47,7 @@
    - Best for quick edits, inline updates, or mobile APIs.
    - Safer for small changes compared to PUT.
 
-5. DELETE (Remove Data)
+- DELETE (Remove Data)
    - Purpose: Remove a resource.
    - Idempotent: Yes (removing the same resource multiple times has the same outcome).
    - Example:
