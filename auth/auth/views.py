@@ -222,7 +222,7 @@ class GitViewSet(viewsets.ViewSet):
                 ["git", "pull"],
                 capture_output=True,
                 text=True,
-                cwd="/path/to/your/project"
+                cwd=BASE_DIR
             )
 
             if result.returncode == 0:
