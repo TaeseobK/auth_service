@@ -1,4 +1,4 @@
-import jwt, datetime, requests
+import jwt, datetime, requests, subprocess
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -8,7 +8,7 @@ from django.http import HttpResponse
 
 from .local_settings import *
 from .filters import *
-from .serializers import UserSerializer
+from .serializers import GitSerializer, UserSerializer
 from .local_settings import *
 from .config import fetch_external_data
 
@@ -16,6 +16,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets, status
+from rest_framework.permissions import IsAuthenticated
 
 from drf_spectacular.types import OpenApiTypes
 
@@ -186,3 +187,70 @@ class UserViewSet(viewsets.ModelViewSet):
 # Endpoint untuk expose metrics ke Prometheus
 def metrics_view(request):
     return HttpResponse(generate_latest(REGISTRY), content_type="text/plain; charset=utf-8")
+
+@extend_schema(tags=["Git"])
+class GitViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request=GitSerializer,
+        responses={
+            200: OpenApiExample(
+                "Success",
+                value={"status": "success", "output": "Already up to date.\n"}
+            ),
+            401: OpenApiExample(
+                "Invalid credentials",
+                value={"status": "error", "error": "Invalid credentials"}
+            ),
+            403: OpenApiExample(
+                "Forbidden",
+                value={"status": "forbidden", "error": "Only superusers can pull"}
+            ),
+        },
+    )
+    @action(detail=False, methods=['post'])
+    def pull(self, request):
+        # ambil username & password dari request
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        user = authenticate(username=username, password=password)
+
+        if user is None:
+            return Response({
+                "status": "error",
+                "error": "Invalid credentials"
+            }, status=401)
+
+        if not user.is_superuser:
+            return Response({
+                "status": "forbidden",
+                "error": "Only superusers can pull"
+            }, status=403)
+
+        # kalau lolos validasi → jalankan git pull
+        try:
+            result = subprocess.run(
+                ["git", "pull"],
+                capture_output=True,
+                text=True,
+                cwd="/path/to/your/project"  # sesuaikan
+            )
+
+            if result.returncode == 0:
+                return Response({
+                    "status": "success",
+                    "output": result.stdout
+                })
+            else:
+                return Response({
+                    "status": "error",
+                    "error": result.stderr
+                }, status=500)
+
+        except Exception as e:
+            return Response({
+                "status": "exception",
+                "error": str(e)
+            }, status=500)

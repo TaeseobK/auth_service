@@ -53,3 +53,7 @@ class UserSerializer(DynamicModelSerializer):
             data.pop('password', None)
 
         return data
+    
+class GitSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)

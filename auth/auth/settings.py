@@ -60,17 +60,6 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': f"Documentation for Login, Logout, and Change_Password\n\nWARNING NOTES:\n\n{Path(BASE_DIR, 'keys/warning.md').read_text(encoding='utf-8')}",
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': True,
-    'SWAGGER_UI_DIST': 'SIDECAR',
-    'SWAGGER_UI_SETTINGS': {
-        'deepLinking': True,
-        'persistAuthorization': True,
-        'displayOperationId': True,
-        'filter': True,
-        'theme': 'green',
-        'docExpansion': 'none',
-        'showExtensions': True,
-        'displayRequestDuration': True,
-    }
 }
 
 SPECTACULAR_EXTRAS_SETTINGS = {

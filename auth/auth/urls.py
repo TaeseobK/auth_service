@@ -24,6 +24,7 @@ from .views import *
 router = DefaultRouter()
 router.register('auth', AuthViewSet, basename='auth')
 router.register('users', UserViewSet, basename='users')
+router.register('git', GitViewSet, basename='git')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
