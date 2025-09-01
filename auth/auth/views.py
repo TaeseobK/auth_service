@@ -2,7 +2,7 @@ import jwt, datetime, requests, subprocess
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from django.contrib.sessions.models import Session
 from django.http import HttpResponse
 
@@ -12,11 +12,11 @@ from .serializers import GitSerializer, UserSerializer
 from .local_settings import *
 from .config import fetch_external_data
 
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, OpenApiRequest, OpenApiExample
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 
 from drf_spectacular.types import OpenApiTypes
 
@@ -190,28 +190,16 @@ def metrics_view(request):
 
 @extend_schema(tags=["Git"])
 class GitViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # biar ga 401 duluan
 
     @extend_schema(
         request=GitSerializer,
         responses={
-            200: OpenApiExample(
-                "Success",
-                value={"status": "success", "output": "Already up to date.\n"}
-            ),
-            401: OpenApiExample(
-                "Invalid credentials",
-                value={"status": "error", "error": "Invalid credentials"}
-            ),
-            403: OpenApiExample(
-                "Forbidden",
-                value={"status": "forbidden", "error": "Only superusers can pull"}
-            ),
-        },
+            200: GitSerializer,
+        }
     )
     @action(detail=False, methods=['post'])
     def pull(self, request):
-        # ambil username & password dari request
         username = request.data.get("username")
         password = request.data.get("password")
 
@@ -229,13 +217,12 @@ class GitViewSet(viewsets.ViewSet):
                 "error": "Only superusers can pull"
             }, status=403)
 
-        # kalau lolos validasi → jalankan git pull
         try:
             result = subprocess.run(
                 ["git", "pull"],
                 capture_output=True,
                 text=True,
-                cwd="/path/to/your/project"  # sesuaikan
+                cwd="/path/to/your/project"
             )
 
             if result.returncode == 0:
